@@ -4,4 +4,5 @@ class Rope:
         self.tail = tail
         self.trail = trail
 
+
     
