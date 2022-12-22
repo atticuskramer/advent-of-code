@@ -83,11 +83,13 @@ Monkey 3:
     If false: throw to monkey 1"""
 
 class Monkey:
-    def __init__(self, id_num, items, op, test):
+    def __init__(self, id_num, items, op, test, divisor):
         self.id_num = id_num
         self.items = items
         self.op = op
         self.test = test
+        # This is duplicated information from test. Could be more efficient
+        self.divisor = divisor
         self.items_inspected = 0
         
     def __str__(self):
@@ -95,10 +97,12 @@ class Monkey:
         
     __repr__ = __str__
         
-    def business(self, monkeys):
+    def business(self, monkeys, lcm, part_one=False):
         for item in self.items:
             new_value = self.op(item)
-            new_value //= 3
+            if part_one:
+                new_value //= 3
+            new_value = new_value % lcm
             to_monkey = self.test(new_value)
             for monkey in monkeys:
                 if monkey.id_num == to_monkey:
@@ -123,13 +127,22 @@ def monkey_from_str(str):
     true_monkey = int(lines[4].split(' ')[-1])
     false_monkey = int(lines[5].split(' ')[-1])
     test = lambda x: true_monkey if x % divisor == 0 else false_monkey
-    return Monkey(id_num, items, op, test)
+    return Monkey(id_num, items, op, test, divisor)
     
-def part_one(input_str, num_rounds):
+def monkey_toss(input_str, num_rounds, part_one=False):
     monkeys = [monkey_from_str(str) for str in input_str.split('\n\n')]
+    # Calculate the leat common multiple (lcm) for all the monkeys test divisors.
+    # Then, we can replace the original worry level with (worry level % lcm) without
+    # worrying about changing the results of any divisor tests.  THIS SOLUTION WAS
+    # FOUND ONLINE.
+    # In this specialized case, we can just multiply all the divisors together, since
+    # looking at the input, we can tell they are all prime
+    lcm = 1
+    for monkey in monkeys:
+        lcm *= monkey.divisor
     for _ in range(num_rounds):
         for monkey in monkeys:
-            monkey.business(monkeys)
+            monkey.business(monkeys, lcm, part_one)
     print(monkeys)
     largest = -1
     second_largest = -1
@@ -142,6 +155,7 @@ def part_one(input_str, num_rounds):
     return largest * second_largest
         
         
-print(part_one(test_input, 20))
+#print(monkey_toss(test_input, 200, False))
 
-print(part_one(full_input, 20))
+print(monkey_toss(full_input, 10000))
+    
