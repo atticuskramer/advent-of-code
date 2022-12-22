@@ -71,32 +71,39 @@ class Heightmap:
             return ord(char) - 96
                     
     @staticmethod
-    def _jumpable(from_height, to_height):
-        return from_height - to_height >= -1
+    def _jumpable(from_height, to_height, reversed=False):
+        if reversed:
+            return to_height - from_height >= -1
+        else:
+            return from_height - to_height >= -1
                     
-    def get_neighbors(self, row, col):
+    def get_neighbors(self, row, col, reversed=False):
         neighbors = []
-        if row - 1 >= 0 and self._jumpable(self.grid[row][col], self.grid[row-1][col]):
+        if row - 1 >= 0 and self._jumpable(self.grid[row][col], self.grid[row-1][col], reversed):
             neighbors.append((row-1,col))
-        if row + 1 < len(self.grid) and self._jumpable(self.grid[row][col], self.grid[row+1][col]):
+        if row + 1 < len(self.grid) and self._jumpable(self.grid[row][col], self.grid[row+1][col], reversed):
             neighbors.append((row+1,col))
-        if col - 1 >= 0 and self._jumpable(self.grid[row][col], self.grid[row][col-1]):
+        if col - 1 >= 0 and self._jumpable(self.grid[row][col], self.grid[row][col-1], reversed):
             neighbors.append((row,col-1))
-        if col + 1 < len(self.grid[row]) and self._jumpable(self.grid[row][col], self.grid[row][col+1]):
+        if col + 1 < len(self.grid[row]) and self._jumpable(self.grid[row][col], self.grid[row][col+1], reversed):
             neighbors.append((row,col+1))
         return neighbors
     
     # Performance could be improve by using A* with a manhattan distance heuristic, instead of bfs
-    def bfs(self):
-        current = self.start
+    def bfs(self, start_coord=None, end_coords=None, reversed=False):
+        if start_coord is None:
+            start_coord = self.start
+        if end_coords is None:
+            end_coords = set([self.end])
+        current = start_coord
         # each visited node is a key in the explored dictionary, with a value of the node that it was
         # reached from, so that we can reconstruct the path once finished
         explored = {}
         queue = [current]
         explored[current] = None
-        while current != self.end and len(queue) > 0:
+        while current not in end_coords and len(queue) > 0:
             current = queue.pop(0)
-            neighbors = [neighbor for neighbor in self.get_neighbors(*current) if neighbor not in explored]
+            neighbors = [neighbor for neighbor in self.get_neighbors(*current, reversed) if neighbor not in explored]
             for neighbor in neighbors:
                 explored[neighbor] = current
             queue.extend(neighbors)
@@ -106,12 +113,25 @@ class Heightmap:
             path.append(current)
         return path
 
+    def best_path(self):
+        potential_starts = set()
+        for row, line in enumerate(self.grid):
+            for col, height in enumerate(line):
+                if height == 1:
+                    potential_starts.add((row,col))
+        # There is probably a cleaner way to do this than passing this reversed variable all the way down
+        return self.bfs(start_coord = self.end, end_coords = potential_starts, reversed=True)
+
 
 
 test_heightmap = Heightmap(test_input)
 test_path = test_heightmap.bfs()
-print(f'Test: length {len(test_path)}, path: {test_path}')
+test_path_2 = test_heightmap.best_path()
+print(f'Part 1 Test: length {len(test_path)}, path: {test_path}')
+print(f'Part 2 Test: length {len(test_path_2)}, path: {test_path_2}')
 
 full_heightmap = Heightmap(full_input)
 full_path = full_heightmap.bfs()
-print(f'Full: length {len(full_path)}, path: {full_path}')
+full_path_2 = full_heightmap.best_path()
+print(f'Part 1 Full: length {len(full_path)}, path: {full_path}')
+print(f'Part 2 Full: length {len(full_path_2)}, path: {full_path_2}')
