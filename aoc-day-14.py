@@ -138,9 +138,9 @@ class Sandbox:
         self.left = self.right = self.SAND_START[0]
         self.height = self.SAND_START[1] + 1
         if start is None:
-            start = self.SAND_START
+            self.start = self.SAND_START
         else:
-            start = start
+            self.start = start
         self.paths=[[eval(pair) for pair in line.split(' -> ')] for line in input_str.split('\n')]
         for path in self.paths:
             for x,y in path:
