@@ -134,9 +134,13 @@ class Sandbox:
     ROCK = '#'
     EMPTY = '.'
 
-    def __init__(self, input_str, floor=None):
+    def __init__(self, input_str, floor=None, start=None):
         self.left = self.right = self.SAND_START[0]
         self.height = self.SAND_START[1] + 1
+        if start is None:
+            start = self.SAND_START
+        else:
+            start = start
         self.paths=[[eval(pair) for pair in line.split(' -> ')] for line in input_str.split('\n')]
         for path in self.paths:
             for x,y in path:
@@ -178,10 +182,8 @@ class Sandbox:
     # 4. If none of these spaces is available, come to rest.
     # 5. If the grain moves past the bounds of the grid, it falls forever
     # Returns True if the grain comes to rest, and False if it falls forever
-    def drop_grain(self, start=None):
-        if start is None:
-            start = self.SAND_START
-        grain_x, grain_y = [self.grid_x(start[0]), start[1]]
+    def drop_grain(self):
+        grain_x, grain_y = [self.grid_x(self.start[0]), self.start[1]]
         if self.grid[grain_y][grain_x] != self.EMPTY:
             return False
         settling = True
