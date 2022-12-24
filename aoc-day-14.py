@@ -134,7 +134,7 @@ class Sandbox:
     ROCK = '#'
     EMPTY = '.'
 
-    def __init__(self, input_str):
+    def __init__(self, input_str, floor=None):
         self.left = self.right = self.SAND_START[0]
         self.height = self.SAND_START[1] + 1
         self.paths=[[eval(pair) for pair in line.split(' -> ')] for line in input_str.split('\n')]
@@ -143,7 +143,13 @@ class Sandbox:
                 self.left = min(self.left, x)
                 self.right = max(self.right, x)
                 self.height = max(self.height, y+1)
+        if floor:
+            self.height += 2
+            self.left = min(self.left, self.SAND_START[0] - (self.height -  1))
+            self.right = max(self.right, self.SAND_START[0] + (self.height - 1))
         self.grid = [[self.EMPTY for _ in range(self.right - self.left + 1)] for _ in range(self.height)]
+        if floor:
+            self.grid[-1] = [self.ROCK for _ in self.grid[-1]]
         self.draw_lines()
 
     def __str__(self):
@@ -176,6 +182,8 @@ class Sandbox:
         if start is None:
             start = self.SAND_START
         grain_x, grain_y = [self.grid_x(start[0]), start[1]]
+        if self.grid[grain_y][grain_x] != self.EMPTY:
+            return False
         settling = True
         while(settling):
             if grain_y + 1 >= self.height:
@@ -199,16 +207,21 @@ class Sandbox:
 
     # Drops grains of sand until no more settle and they begin falling into the abyss.
     # Returns the number of grains that settled
-    def pour_sand(self):
+    def pour_sand(self, verbose=False):
         settled = 0
         while self.drop_grain():
             settled += 1
-            print(self)
+            if verbose:
+                print(self)
         return settled
 
 
 test_sandbox = Sandbox(test_input)
 print(f'Part 1 Test: {test_sandbox.pour_sand()}')
-
 full_sandbox = Sandbox(full_input)
 print(f'Part 1 Full: {full_sandbox.pour_sand()}')
+
+test_sandbox_2 = Sandbox(test_input, floor=2)
+print(f'Part 2 Test: {test_sandbox_2.pour_sand(verbose=True)}')
+full_sandbox_2 = Sandbox(full_input, floor=2)
+print(f'Part 2 Full: {full_sandbox_2.pour_sand()}')
