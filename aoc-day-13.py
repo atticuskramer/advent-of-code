@@ -553,10 +553,35 @@ def part_one(input_str):
         packet_1, packet_2 = map(packet_from_str, packet_pair.split('\n'))
         if compare_packets(packet_1, packet_2):
             ordered_packets.append(packet_num)
-    print(ordered_packets)
     return sum(ordered_packets)
+
+# Order all of the packets, as well as two index packets, [[2]] and [[6]],
+# then find the sum of the indices of the index packets
+def part_two(input_str):
+    INDEX_PACKET_ONE = [[2]]
+    INDEX_PACKET_TWO = [[6]]
+    # We will just use a simple insertion sort for now.  This could certainly be improved
+    lines = input_str.split('\n')
+    packets = list(map(packet_from_str, [line for line in lines if line != '']))
+    packets.extend([INDEX_PACKET_ONE, INDEX_PACKET_TWO])
+
+    sorted = []
+    for packet in packets:
+        found_spot = False
+        for i, sorted_packet in enumerate(sorted):
+            if compare_packets(packet, sorted_packet):
+                sorted.insert(i, packet)
+                found_spot = True
+                break
+        if not found_spot:
+            sorted.append(packet)
+    return (sorted.index(INDEX_PACKET_ONE) + 1) * (sorted.index(INDEX_PACKET_TWO) + 1)
+    
+        
 
 
 print(f'Part 1 test: {part_one(test_input)}')
-
 print(f'Part 1 full: {part_one(full_input)}')
+
+print(f'Part 2 test: {part_two(test_input)}')
+print(f'Part 2 full: {part_two(full_input)}')
