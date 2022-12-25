@@ -73,22 +73,27 @@ class Searchzone:
     def __str__(self):
         return f'SearchZone with Sensors: {self.sensors}\nAnd Beacons: {self.beacons}'
 
-    # For each sensor, find all the spaces in the row that fall within that beacon's range,
-    # and add them to the set of blackzones
-    #
-    # Note: This is almost certainly an extremely inefficient way to do this
+    # For each sensor, find the left and right side of the area in the given row that
+    # that sensor's range covers, and if either of those fall outside the total range
+    # covered by sensors already checked, set them to be the new left and/or right
     def beacon_blackzones_in_row(self, row):
-        blackzones = set()
+        left = right = None
         for sensor, beacon in self.sensors.items():
             md = manhattan_distance(sensor,beacon)
             y_dif = abs(sensor[1] - row)
             x_dif = md - y_dif
-            left = sensor[0] - x_dif
-            right = sensor[0] + x_dif
-            for x in range(left, right+1):
-                if (x,row) not in self.beacons:
-                    blackzones.add((x,row))
-        return len(blackzones)
+            sensor_left = sensor[0] - x_dif
+            sensor_right = sensor[0] + x_dif
+            if left is None:
+                left = sensor_left
+            else:
+                left = min(left, sensor_left)
+            if right is None:
+                right = sensor_right
+            else:
+                right = max(right, sensor_right)
+        total = (right - left) + 1 - len([beacon for beacon in self.beacons if beacon[1] == row])
+        return total
 
 test_zone = Searchzone(test_input)
 print(test_zone.beacon_blackzones_in_row(10))
