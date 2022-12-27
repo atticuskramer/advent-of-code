@@ -59,6 +59,34 @@ def get_nums_from_str(str):
 
 def manhattan_distance(point_1, point_2):
     return abs(point_1[0] - point_2[0]) + abs(point_1[1] - point_2[1])
+    
+def _overlapping(segment_1, segment_2):
+    l1, r1 = segment_1
+    l2, r2 = segment_2
+    return (l1 <= l2 <= r1 or
+            l1 <= r2 <= r1 or
+            l2 <= l1 <= r2 or
+            l2 <= r1 <= r2)
+    
+def _insert_bz(new_bz, bzs):
+    left, right = new_bz
+    placed = False
+    i = 0
+    while not placed:
+        if i == len(bzs):
+            bzs.append(new_bz)
+            break
+        bz_l, bz_r = bzs[i]
+        if _overlapping(new_bz,bzs[i]):
+            left = min(left, bz_l)
+            right = max(right, bz_r)
+            new_bz = (left, right)
+            bzs.pop(i)
+        elif right < bz_l:
+            bzs.insert(i, (left, right))
+            placed = True
+        else:
+            i += 1
 
 class Searchzone:
     
@@ -74,29 +102,31 @@ class Searchzone:
         return f'SearchZone with Sensors: {self.sensors}\nAnd Beacons: {self.beacons}'
 
     # For each sensor, find the left and right side of the area in the given row that
-    # that sensor's range covers, and if either of those fall outside the total range
-    # covered by sensors already checked, set them to be the new left and/or right
+    # that sensor's range covers.  If one side is within a range already in our list 
+    # of ranges, and the other is not, extend that range to include the new values.
+    # If both sides are in different ranges, connect the two into a single range. and
+    # if neither side is within the already covered ranges, add (left, right) as a new
+    # covered range. Return this list of covered ranges
     def beacon_blackzones_in_row(self, row):
-        left = right = None
+        blackzones = []
         for sensor, beacon in self.sensors.items():
             md = manhattan_distance(sensor,beacon)
             y_dif = abs(sensor[1] - row)
             x_dif = md - y_dif
-            sensor_left = sensor[0] - x_dif
-            sensor_right = sensor[0] + x_dif
-            if left is None:
-                left = sensor_left
-            else:
-                left = min(left, sensor_left)
-            if right is None:
-                right = sensor_right
-            else:
-                right = max(right, sensor_right)
-        total = (right - left) + 1 - len([beacon for beacon in self.beacons if beacon[1] == row])
-        return total
+            if x_dif > 0:
+                left = sensor[0] - x_dif
+                right = sensor[0] + x_dif
+                _insert_bz((left, right), blackzones)
+        return blackzones
+        
+    def part_one(self, row):
+        blackzones = self.beacon_blackzones_in_row(row)
+        bz_lengths = map(lambda pair: pair[1] - pair[0] + 1, blackzones)
+        return sum(bz_lengths) - len([beacon for beacon in self.beacons if beacon[1] == row])
 
 test_zone = Searchzone(test_input)
 print(test_zone.beacon_blackzones_in_row(10))
+print(test_zone.part_one(10))
 full_zone = Searchzone(full_input)
 print(full_zone.beacon_blackzones_in_row(2000000))
-        
+print(full_zone.part_one(2000000))
