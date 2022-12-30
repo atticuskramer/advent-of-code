@@ -61,10 +61,6 @@ Valve HH has flow rate=22; tunnel leads to valve GG
 Valve II has flow rate=0; tunnels lead to valves AA, JJ
 Valve JJ has flow rate=21; tunnel leads to valve II"""
 
-# Checks each sublist from [-2:] to [0:]
-def _redundant_path(self, path):
-    pass
-
 class Valve:
     def __init__(self, valve_str):
         self.name = valve_str.split('Valve ')[1][:2]
@@ -92,62 +88,32 @@ class Graph:
                 self.start = cur_valve
             self.valves[cur_valve.name] = cur_valve
         self.paths = {valve: dict() for valve in self.valves}
+        self.fill_paths()
     
-    # Returns a pair (flow, path), where flow is an int indicating the maximum flow
-    # possible starting at cur_valve with 'time' steps available, and path is a list
-    # of the valves that must be visited to get that flow
-    # def find_highest_flow(self, cur_valve=None, time=30, activated=None):
-    #     if cur_valve is None:
-    #         cur_valve = self.start
-    #     if activated is None:
-    #         activated = set()
-    #     if time <= 0:
-    #         return (0, [cur_valve.name])
-    #     next_steps = []
-    #     for valve in [self.valves[name] for name in cur_valve.connections]:
-    #         flow, path = self.find_highest_flow(valve, time - 1, activated)
-    #         next_steps.append((flow, path + [cur_valve.name]))
-    #     if cur_valve.name not in activated and (cur_valve.flow > 0):
-    #         activated.add(cur_valve.name)
-    #         flow, path = self.find_highest_flow(cur_valve, time - 1, activated)
-    #         activated.remove(cur_valve.name)
-    #         next_steps.append((flow + cur_valve.flow*(time-1), path + [cur_valve.name]))
-    #     best = None
-    #     for step in next_steps:
-    #         flow, path = step
-    #         if best is None or flow > best[0]:
-    #             best = step
-    #     return best
-    
-    # First, make sure that the pre-computed list of shortest paths is complete, then
-    # beginning with the start valve, find the value of traveling to each valve in the Graph
-    # from the current valve and move to the highest one.
-    def find_highest_flow(self, cur_valve=None, time=30):
+    # Try each permutation of paths between
+    # nodes with flow > 0, selecting the best performing one.  **if we had no time constraint,
+    # This would be prohibitively expensive, since there are 15 valves with flow > 0 and thus
+    # 15! possible permutations between them.  However, the vast majority of these paths will
+    # not be explored because they would take longer than the time limit**
+    # - Reasoning in ** ** was found via adventofcode subreddit
+    def find_highest_flow(self, cur_valve=None, time=30, unopened=None):
         if cur_valve is None:
             cur_valve = self.start.name
-        self.fill_paths()
-        opened = set()
-        total_flow = 0
-        while time > 0:
-            print('Looking for valve at time', time)
-            max_flow = -1
-            for valve in self.valves:
-                if valve not in opened:
-                    # This is one longer than the actual distance, but we would need to add
-                    # one again anyway, to account for the step spent opening the valve
-                    distance = len(self.paths[cur_valve][valve])
-                    # Valves too far away to be opened will be ignored since this value will 
-                    # be negative
-                    flow = (time - distance)*self.valves[valve].flow
-                    print(f'Checking valve {valve} at distance {distance} with flow {flow}')
-                    if flow > max_flow:
-                        max_flow = flow
-                        to_open = valve
-            opened.add(to_open)
-            total_flow += max_flow
-            time -= len(self.paths[cur_valve][to_open])
-            cur_valve = to_open
-        return total_flow
+        if unopened is None:
+            unopened = {valve for valve in self.valves if self.valves[valve].flow > 0}
+        best = 0
+        for valve in unopened:
+            # This is one longer than the distance, but we would need to add
+            # one again anyway, to account for the step spent opening the valve
+            time_to_open = len(self.paths[cur_valve][valve])
+            if time_to_open < time:
+                unopened.remove(valve)
+                flow = self.find_highest_flow(valve, time - time_to_open, unopened)
+                flow += (time - time_to_open)*self.valves[valve].flow
+                unopened.add(valve)
+                best = max(flow, best)
+        # If every valve was too far away to open in time, best will still be 0
+        return best
     
     # Returns the shortest distance between valves start_name and end_name using bfs, and
     # additionally, updates the 'distances' property for each valve on the path from the start
@@ -182,11 +148,7 @@ class Graph:
                 self.find_path(start_valve, end_valve)
 
 test_graph = Graph(test_input)
-print(test_graph.find_highest_flow(time=30))
-print(test_graph.find_path('AA', 'EE'))
-test_graph.fill_paths()
-print(test_graph.paths)
+print(test_graph.find_highest_flow())
 
-#full_graph = Graph(full_input)
-#full_graph.fill_paths()
-#print(full_graph.paths)
+full_graph = Graph(full_input)
+print(full_graph.find_highest_flow())
