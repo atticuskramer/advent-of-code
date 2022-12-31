@@ -123,10 +123,27 @@ class Searchzone:
         blackzones = self.beacon_blackzones_in_row(row)
         bz_lengths = map(lambda pair: pair[1] - pair[0] + 1, blackzones)
         return sum(bz_lengths) - len([beacon for beacon in self.beacons if beacon[1] == row])
+    
+    # Find the beacon blackzones for each row in y_range, then for each consecutive pair
+    # in the blackzone, check if it falls within the x_range. If it does, (assuming there
+    # can be only one valid beacon location in the given ranges) then the beacon location
+    # is in that row directly between the two ranges
+    def part_two(self, x_range, y_range):
+        x_start, x_end = x_range
+        y_start, y_end = y_range
+        for row in range(y_start, y_end):
+            blackzones = self.beacon_blackzones_in_row(row)
+            for (x1,x2),(x3,x4) in zip (blackzones, blackzones[1:]):
+                if x1 <= x_start and x4 >= x_end:
+                    return (x2+1, row)
+        return (-1,-1)
+
 
 test_zone = Searchzone(test_input)
 print(test_zone.beacon_blackzones_in_row(10))
 print(test_zone.part_one(10))
+print(test_zone.part_two((0,20),(0,20)))
 full_zone = Searchzone(full_input)
 print(full_zone.beacon_blackzones_in_row(2000000))
 print(full_zone.part_one(2000000))
+print(full_zone.part_two((0,4000000), (0,4000000)))
