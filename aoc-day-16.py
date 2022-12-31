@@ -69,7 +69,6 @@ class Valve:
             self.connections = valve_str.split('valves ')[1].split(', ')
         else:
             self.connections = [valve_str.split('valve ')[1]]
-        print(self)
             
     def __str__(self):
         return f'Valve {self.name} - flow:{self.flow}, {self.connections}'
@@ -114,6 +113,138 @@ class Graph:
                 best = max(flow, best)
         # If every valve was too far away to open in time, best will still be 0
         return best
+        
+    def find_elephant_flow(self, cur_valve=None, cd=0, ele_cur_valve=None, ele_cd=0, cur_flow=0, time=26, unopened=None):
+        if time == 0:
+            return (0, ([],[]))
+        if cur_valve is None:
+            cur_valve = self.start.name
+        if ele_cur_valve is None:
+            ele_cur_valve = self.start.name
+        if unopened is None:
+            unopened = [valve for valve in self.valves if self.valves[valve].flow > 0]
+        best = 0
+        path = []
+        ele_path = []
+        if cd == 0 and ele_cd == 0 and unopened:
+            cur_flow += self.valves[cur_valve].flow + self.valves[ele_cur_valve].flow
+            for i, valve in enumerate(unopened):
+                #unopened.remove(valve)
+                ele_picks = unopened[:i] + unopened[i+1:]
+                for j, ele_valve in enumerate(ele_picks):
+                    #unopened.remove(ele_valve)
+                    next_unopened = ele_picks[:j] + ele_picks[j+1:]
+                    # This is one longer than the distance, but we would need to add
+                    # one again anyway, to account for the step spent opening the valve
+                    time_to_open = len(self.paths[cur_valve][valve])
+                    ele_time_to_open = len(self.paths[ele_cur_valve][ele_valve])
+                    flow, paths = self.find_elephant_flow(valve, time_to_open-1, ele_valve, ele_time_to_open-1, cur_flow, time-1, next_unopened)
+                    flow += cur_flow
+                    if flow > best:
+                        best = flow
+                        path, ele_path = paths
+                        path.extend(self.paths[cur_valve][valve])
+                        ele_path.extend(self.paths[ele_cur_valve][ele_valve])
+                    #unopened.add(ele_valve)
+                #unopened.add(valve)
+        elif cd == 0 and unopened:
+            cur_flow += self.valves[cur_valve].flow
+            for i, valve in enumerate(unopened):
+                next_unopened = unopened[:i] + unopened[i+1:]
+                #unopened.remove(valve)
+                time_to_open = len(self.paths[cur_valve][valve])
+                flow, paths = self.find_elephant_flow(valve, time_to_open-1, ele_cur_valve, ele_cd-1, cur_flow, time-1, next_unopened)
+                flow += cur_flow
+                if flow > best:
+                    best = flow
+                    path, ele_path = paths
+                    path.extend(self.paths[cur_valve][valve])
+                #unopened.add(valve)
+        elif ele_cd == 0 and unopened:
+            cur_flow += self.valves[ele_cur_valve].flow
+            for i, ele_valve in enumerate(unopened):
+                next_unopened = unopened[:i] + unopened[i+1:]
+                # unopened.remove(ele_valve)
+                ele_time_to_open = len(self.paths[ele_cur_valve][ele_valve])
+                flow, paths = self.find_elephant_flow(cur_valve, cd-1, ele_valve, ele_time_to_open-1, cur_flow, time-1, next_unopened)
+                flow += cur_flow
+                if flow > best:
+                    best = flow
+                    path, ele_path = paths
+                    ele_path.extend(self.paths[ele_cur_valve][ele_valve])
+                # unopened.add(ele_valve)
+        if best == 0:
+            best, paths = self.find_elephant_flow(cur_valve, cd-1, ele_cur_valve, ele_cd-1, cur_flow, time-1, unopened)
+            best += cur_flow
+            path, ele_path = paths
+        # print('At time', time, 'best is', best)
+        return (best, (path, ele_path))
+    
+    # def find_elephant_flow(self, cur_valve=None, cd=0, ele_cur_valve=None, ele_cd=0, cur_flow=0, time=26, unopened=None):
+    #     if time == 0:
+    #         return (0, ([], []))
+    #     if cur_valve is None:
+    #         cur_valve = self.start.name
+    #     if ele_cur_valve is None:
+    #         ele_cur_valve = self.start.name
+    #     if unopened is None:
+    #         unopened = [name for name,valve in self.valves.items() if valve.flow > 0]
+        
+    #     best = 0 
+    #     next_kwargs_list = []
+    #     if cd == 0 and ele_cd == 0:
+    #         for valve in unopened:
+    #             for ele_valve in unopened:
+    #                 if valve != ele_valve:
+    #                     new_cd = len(self.paths[cur_valve][valve])
+    #                     new_ele_cd = len(self.paths[ele_cur_valve][ele_valve])
+    #                     added_flow = self.valves[cur_valve].flow + self.valves[ele_cur_valve].flow
+    #                     if new_cd < time or new_ele_cd < time:
+    #                         next_kwargs = {
+    #                             'cur_valve': valve,
+    #                             'ele_cur_valve': ele_valve,
+    #                             'cd': new_cd - 1,
+    #                             'ele_cd': new_ele_cd - 1,
+    #                             'cur_flow': cur_flow + self.valves[cur_valve].flow + self.valves[ele_cur_valve].flow,
+    #                             'time': time - 1,
+    #                             'unopened': [v for v in unopened if v != valve and v != ele_valve]
+    #                         }
+    #                         next_kwargs_list.append((added_flow, next_kwargs))
+    #     elif cd == 0:
+    #         for valve in unopened:
+    #             new_cd = len(self.paths[cur_valve][valve])
+    #             added_flow = self.valves[cur_valve].flow
+    #             if new_cd < time:
+    #                 next_kwargs = {
+    #                     'cur_valve': valve,
+    #                     'ele_cur_valve': ele_cur_valve,
+    #                     'cd': new_cd - 1,
+    #                     'ele_cd': ele_cd - 1,
+    #                     'cur_flow': cur_flow + self.valves[cur_valve].flow,
+    #                     'time': time - 1,
+    #                     'unopened': [v for v in unopened if v != valve]
+    #                 }
+    #                 next_kwargs_list.append((added_flow, next_kwargs))
+    #     elif ele_cd == 0:
+    #         for ele_valve in unopened:
+    #             new_ele_cd = len(self.paths[ele_cur_valve][ele_valve])
+    #             added_flow = self.valves[ele_cur_valve].flow
+    #             if new_ele_cd < time:
+    #                 next_kwargs = {
+    #                     'cur_valve': cur_valve,
+    #                     'ele_cur_valve': ele_valve,
+    #                     'cd': cd - 1,
+    #                     'ele_cd': new_ele_cd - 1,
+    #                     'cur_flow': cur_flow + self.valves[ele_cur_valve].flow,
+    #                     'time': time - 1,
+    #                     'unopened': [v for v in unopened if v != ele_valve]
+    #                 }
+    #                 next_kwargs_list.append((added_flow, next_kwargs))
+    #     for added_flow, kwargs in next_kwargs_list:
+    #         next_flow, paths = self.find_elephant_flow(**kwargs)
+    #         next_flow += added_flow
+    #         if next_flow > best:
+    #             best = next_flow
     
     # Returns the shortest distance between valves start_name and end_name using bfs, and
     # additionally, updates the 'distances' property for each valve on the path from the start
@@ -149,6 +280,8 @@ class Graph:
 
 test_graph = Graph(test_input)
 print(test_graph.find_highest_flow())
+print(test_graph.find_elephant_flow(time=26))
 
 full_graph = Graph(full_input)
 print(full_graph.find_highest_flow())
+#print(full_graph.find_elephant_flow())
