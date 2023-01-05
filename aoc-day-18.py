@@ -2205,11 +2205,17 @@ test_input = """2,2,2
 2,1,5
 2,3,5"""
 
+from math import inf
+
 def one_different(tuple_a, tuple_b):
     differences = 0
     for a,b in zip(tuple_a, tuple_b):
         differences += abs(a - b)
     return differences == 1
+    
+def get_neighbors(point):
+    difs = [(-1,0,0), (1,0,0), (0,-1,0), (0,1,0), (0,0,-1), (0,0,1)]
+    return [tuple(map(sum, zip(dif, point))) for dif in difs]
 
 class Graph:
     
@@ -2218,20 +2224,75 @@ class Graph:
         # We will just leave them as sets for simplicity
         self.nodes = set()
         self.edges = {}
+        self.x_low = self.y_low = self.z_low = inf
+        self.x_high = self.y_high = self.z_high = -inf
         for line in input_str.split('\n'):
-            node = tuple(map(int, line.split(',')))
-            self.nodes.add(node)
+            (x,y,z) = tuple(map(int, line.split(',')))
+            self.x_low = min(self.x_low, x)
+            self.y_low = min(self.y_low, y)
+            self.z_low = min(self.z_low, z)
+            self.x_high = max(self.x_high, x)
+            self.y_high = max(self.y_high, y)
+            self.z_high = max(self.z_high, z)
+            self.nodes.add((x,y,z))
         for node in self.nodes:
-            self.edges[node] = [node2 for node2 in self.nodes if one_different(node, node2)]
+            self.edges[node] = {neighbor for neighbor in get_neighbors(node) if neighbor in self.nodes}
             
     def surface_area(self):
         area = 0
         for node in self.nodes:
             area += (6 - len(self.edges[node]))
         return area
+        
+    def in_bounds(self, point):
+        x,y,z = point
+        return (self.x_low <= x <= self.x_high and
+                self.y_low <= y <= self.y_high and
+                self.z_low <= z <= self.z_high)
+        
+    # This function modifies 'outside_points' to include any points explored 
+    # along the path if 'point' is found to have an escape route
+    def find_escape_path(self, point, outside_points):
+        cur_point = point
+        parent = None
+        queue = [point]
+        explored = {}
+        while queue and self.in_bounds(cur_point) and cur_point not in outside_points:
+            neighbors = [np for np in get_neighbors(cur_point) if (np not in self.nodes) and (np not in explored)]
+            queue.extend(neighbors)
+            explored[cur_point] = parent
+            parent = cur_point
+            cur_point = queue.pop(0)
+        if queue:
+            # TODO: find a way to include paths for these points?
+            # explored.update(queue) 
+            outside_points.update(explored)
+            # TODO: Return path?
+            return True
+        else:
+            return False
+        
+    # First thoughts: For each node, get a list of all of its neighbor points. Save all of the
+    # non-node neighbors to a set. For each neighbor point, perform a bfs, looking for an exit
+    # from the droplet (that is, if we run out of options to expand the search, it is inside, if we
+    # find a search option that is beyond the droplet's extremities in any direction, or one that
+    # is already in the set of "outside" nodes, it is outside),
+    # and add all the explored nodes to an "outside" set, if the node is outside
+    def outer_surface_area(self):
+        neighbors = []
+        for node in self.nodes:
+            neighbors.extend([neighbor for neighbor in get_neighbors(node) if neighbor not in self.nodes])
+        outside_points = set()
+        outer_area = 0
+        for point in neighbors:
+            if self.find_escape_path(point, outside_points):
+                outer_area += 1
+        return outer_area
             
 test_graph = Graph(test_input)
 print(test_graph.surface_area())
+print(test_graph.outer_surface_area())
 
 full_graph = Graph(full_input)
 print(full_graph.surface_area())
+print(full_graph.outer_surface_area())
