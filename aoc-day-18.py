@@ -2252,25 +2252,26 @@ class Graph:
         
     # This function modifies 'outside_points' to include any points explored 
     # along the path if 'point' is found to have an escape route
-    def find_escape_path(self, point, outside_points):
+    def find_escape_path(self, point, outside_points, inside_points):
         cur_point = point
         parent = None
         queue = [point]
         explored = {}
-        while queue and self.in_bounds(cur_point) and cur_point not in outside_points:
+        while queue and self.in_bounds(cur_point) and cur_point not in outside_points and cur_point not in inside_points:
             neighbors = [np for np in get_neighbors(cur_point) if (np not in self.nodes) and (np not in explored)]
             queue.extend(neighbors)
             explored[cur_point] = parent
             parent = cur_point
             cur_point = queue.pop(0)
-        if queue:
+        if cur_point in inside_points or not queue:
+            inside_points.update(explored)
+            return False
+        else:
             # TODO: find a way to include paths for these points?
             # explored.update(queue) 
             outside_points.update(explored)
             # TODO: Return path?
             return True
-        else:
-            return False
         
     # First thoughts: For each node, get a list of all of its neighbor points. Save all of the
     # non-node neighbors to a set. For each neighbor point, perform a bfs, looking for an exit
@@ -2283,9 +2284,10 @@ class Graph:
         for node in self.nodes:
             neighbors.extend([neighbor for neighbor in get_neighbors(node) if neighbor not in self.nodes])
         outside_points = set()
+        inside_points = set()
         outer_area = 0
         for point in neighbors:
-            if self.find_escape_path(point, outside_points):
+            if self.find_escape_path(point, outside_points, inside_points):
                 outer_area += 1
         return outer_area
             
