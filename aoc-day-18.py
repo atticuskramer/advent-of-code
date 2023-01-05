@@ -2254,14 +2254,12 @@ class Graph:
     # along the path if 'point' is found to have an escape route
     def find_escape_path(self, point, outside_points, inside_points):
         cur_point = point
-        parent = None
         queue = [point]
-        explored = {}
+        explored = {point:None}
         while queue and self.in_bounds(cur_point) and cur_point not in outside_points and cur_point not in inside_points:
             neighbors = [np for np in get_neighbors(cur_point) if (np not in self.nodes) and (np not in explored)]
             queue.extend(neighbors)
-            explored[cur_point] = parent
-            parent = cur_point
+            explored.update({neighbor:cur_point for neighbor in neighbors})
             cur_point = queue.pop(0)
         if cur_point in inside_points or not queue:
             inside_points.update(explored)
