@@ -2237,6 +2237,21 @@ class Graph:
             self.nodes.add((x,y,z))
         for node in self.nodes:
             self.edges[node] = {neighbor for neighbor in get_neighbors(node) if neighbor in self.nodes}
+    
+    def layer_string(self, layer):
+        grid = [['.' for _ in range(self.y_low, self.y_high+1)] for _ in range(self.z_low, self.z_high+1)]
+        for (x,y,z) in self.nodes:
+            if layer == x:
+                y = y - self.y_low
+                z = z - self.z_low
+                grid[z][y] = '#'
+        return '\n'.join(map('  '.join, grid))
+                
+    def print_droplet(self):
+        for x in range(self.x_low, self.x_high+1):
+            print('Layer', x, 'y_low =', self.y_low, 'z_low =', self.z_low)
+            print(self.layer_string(x))
+            print()
             
     def surface_area(self):
         area = 0
@@ -2253,20 +2268,19 @@ class Graph:
     # This function modifies 'outside_points' to include any points explored 
     # along the path if 'point' is found to have an escape route
     def find_escape_path(self, point, outside_points, inside_points):
+        focal_point = (15,14,14)
         cur_point = point
         queue = [point]
         explored = {point:None}
         while queue and self.in_bounds(cur_point) and cur_point not in outside_points and cur_point not in inside_points:
+            cur_point = queue.pop(0)
             neighbors = [np for np in get_neighbors(cur_point) if (np not in self.nodes) and (np not in explored)]
             queue.extend(neighbors)
             explored.update({neighbor:cur_point for neighbor in neighbors})
-            cur_point = queue.pop(0)
         if cur_point in inside_points or not queue:
             inside_points.update(explored)
             return False
         else:
-            # TODO: find a way to include paths for these points?
-            # explored.update(queue) 
             outside_points.update(explored)
             # TODO: Return path?
             return True
@@ -2284,15 +2298,24 @@ class Graph:
         outside_points = set()
         inside_points = set()
         outer_area = 0
+        outer_points = set()
+        inner_area = 0
+        inner_points = set()
         for point in neighbors:
             if self.find_escape_path(point, outside_points, inside_points):
                 outer_area += 1
-        return outer_area
+                outer_points.add(point)
+            else:
+                inner_area += 1
+                inner_points.add(point)
+        return outer_area, inner_area
             
 test_graph = Graph(test_input)
+# test_graph.print_droplet()
 print(test_graph.surface_area())
 print(test_graph.outer_surface_area())
 
 full_graph = Graph(full_input)
+# full_graph.print_droplet()
 print(full_graph.surface_area())
 print(full_graph.outer_surface_area())
