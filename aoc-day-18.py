@@ -2268,7 +2268,6 @@ class Graph:
     # This function modifies 'outside_points' to include any points explored 
     # along the path if 'point' is found to have an escape route
     def find_escape_path(self, point, outside_points, inside_points):
-        focal_point = (15,14,14)
         cur_point = point
         queue = [point]
         explored = {point:None}
