@@ -118,8 +118,8 @@ class Graph:
         
     def find_elephant_flow(self, cur_valve=None, cd=0, ele_cur_valve=None, ele_cd=0, cur_flow=0, time=26, unopened=None):
         self.ele_counter += 1
-        if self.ele_counter % 10000000 == 0:
-            print(self.ele_counter)
+        # if self.ele_counter % 10000000 == 0:
+        #     print(self.ele_counter)
         if time == 0:
             return (0, ([],[]))
         if cd > time and ele_cd > time:
@@ -341,12 +341,12 @@ class Graph:
 
 test_graph = Graph(test_input)
 print(test_graph.find_highest_flow())
-print(f'Counter = {test_graph.counter}')
+# print(f'Counter = {test_graph.counter}')
 print(test_graph.find_elephant_flow(time=26))
-print(f'Ele_Counter = {test_graph.ele_counter}')
+# print(f'Ele_Counter = {test_graph.ele_counter}')
 
 full_graph = Graph(full_input)
 print(full_graph.find_highest_flow())
-print(f'Counter = {full_graph.counter}')
+# print(f'Counter = {full_graph.counter}')
 print(full_graph.find_elephant_flow())
-print(f'Ele_Counter = {full_graph.ele_counter}')
+# print(f'Ele_Counter = {full_graph.ele_counter}')
