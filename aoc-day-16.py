@@ -88,6 +88,8 @@ class Graph:
             self.valves[cur_valve.name] = cur_valve
         self.paths = {valve: dict() for valve in self.valves}
         self.fill_paths()
+        self.counter = 0
+        self.ele_counter = 0
     
     # Try each permutation of paths between
     # nodes with flow > 0, selecting the best performing one.  **if we had no time constraint,
@@ -96,89 +98,148 @@ class Graph:
     # not be explored because they would take longer than the time limit**
     # - Reasoning in ** ** was found via adventofcode subreddit
     def find_highest_flow(self, cur_valve=None, time=30, unopened=None):
+        self.counter += 1
         if cur_valve is None:
             cur_valve = self.start.name
         if unopened is None:
-            unopened = {valve for valve in self.valves if self.valves[valve].flow > 0}
+            unopened = [valve for valve in self.valves if self.valves[valve].flow > 0]
         best = 0
-        for valve in unopened:
+        for i, valve in enumerate(unopened):
             # This is one longer than the distance, but we would need to add
             # one again anyway, to account for the step spent opening the valve
             time_to_open = len(self.paths[cur_valve][valve])
             if time_to_open < time:
-                unopened.remove(valve)
-                flow = self.find_highest_flow(valve, time - time_to_open, unopened)
+                next_unopened = unopened[:i] + unopened[i+1:]
+                flow = self.find_highest_flow(valve, time - time_to_open, next_unopened)
                 flow += (time - time_to_open)*self.valves[valve].flow
-                unopened.add(valve)
                 best = max(flow, best)
         # If every valve was too far away to open in time, best will still be 0
         return best
         
     def find_elephant_flow(self, cur_valve=None, cd=0, ele_cur_valve=None, ele_cd=0, cur_flow=0, time=26, unopened=None):
+        self.ele_counter += 1
+        if self.ele_counter % 10000000 == 0:
+            print(self.ele_counter)
         if time == 0:
             return (0, ([],[]))
+        if cd > time and ele_cd > time:
+            return (cur_flow * time, ([],[]))
         if cur_valve is None:
             cur_valve = self.start.name
         if ele_cur_valve is None:
             ele_cur_valve = self.start.name
         if unopened is None:
             unopened = [valve for valve in self.valves if self.valves[valve].flow > 0]
-        best = 0
+        best = -1
         path = []
         ele_path = []
-        if cd == 0 and ele_cd == 0 and unopened:
-            cur_flow += self.valves[cur_valve].flow + self.valves[ele_cur_valve].flow
+        if cd > 0 and ele_cd > 0:
+            flow, paths = self.find_elephant_flow(cur_valve, cd - 1, ele_cur_valve, ele_cd - 1, cur_flow, time - 1, unopened)
+            return (flow + cur_flow, paths)
+        elif cd == 0:
+            cur_flow += self.valves[cur_valve].flow
+            # If we are out of valves to open, just set the time to 'infinite'
+            if not unopened:
+                return self.find_elephant_flow(cur_valve, 999999, ele_cur_valve, ele_cd, cur_flow, time, unopened)
             for i, valve in enumerate(unopened):
-                #unopened.remove(valve)
-                ele_picks = unopened[:i] + unopened[i+1:]
-                for j, ele_valve in enumerate(ele_picks):
-                    #unopened.remove(ele_valve)
-                    next_unopened = ele_picks[:j] + ele_picks[j+1:]
-                    # This is one longer than the distance, but we would need to add
-                    # one again anyway, to account for the step spent opening the valve
-                    time_to_open = len(self.paths[cur_valve][valve])
-                    ele_time_to_open = len(self.paths[ele_cur_valve][ele_valve])
-                    flow, paths = self.find_elephant_flow(valve, time_to_open-1, ele_valve, ele_time_to_open-1, cur_flow, time-1, next_unopened)
-                    flow += cur_flow
+                next_unopened = unopened[:i] + unopened[i+1:]
+                time_to_open = len(self.paths[cur_valve][valve])
+                if time_to_open < time:
+                    flow, paths = self.find_elephant_flow(valve, time_to_open, ele_cur_valve, ele_cd, cur_flow, time, next_unopened)
                     if flow > best:
                         best = flow
                         path, ele_path = paths
                         path.extend(self.paths[cur_valve][valve])
-                        ele_path.extend(self.paths[ele_cur_valve][ele_valve])
-                    #unopened.add(ele_valve)
-                #unopened.add(valve)
-        elif cd == 0 and unopened:
-            cur_flow += self.valves[cur_valve].flow
-            for i, valve in enumerate(unopened):
-                next_unopened = unopened[:i] + unopened[i+1:]
-                #unopened.remove(valve)
-                time_to_open = len(self.paths[cur_valve][valve])
-                flow, paths = self.find_elephant_flow(valve, time_to_open-1, ele_cur_valve, ele_cd-1, cur_flow, time-1, next_unopened)
-                flow += cur_flow
-                if flow > best:
-                    best = flow
-                    path, ele_path = paths
-                    path.extend(self.paths[cur_valve][valve])
-                #unopened.add(valve)
-        elif ele_cd == 0 and unopened:
+            # If the best is still -1, then none of the unopened valves are in range,
+            # so just set the cd to 'infinite'
+            if best == -1:
+                best, (path, ele_path) = self.find_elephant_flow(cur_valve, 999999, ele_cur_valve, ele_cd, cur_flow, time, unopened)
+        elif ele_cd == 0:
             cur_flow += self.valves[ele_cur_valve].flow
+            if not unopened:
+                return self.find_elephant_flow(cur_valve, cd, ele_cur_valve, 999999, cur_flow, time, unopened)
             for i, ele_valve in enumerate(unopened):
                 next_unopened = unopened[:i] + unopened[i+1:]
-                # unopened.remove(ele_valve)
                 ele_time_to_open = len(self.paths[ele_cur_valve][ele_valve])
-                flow, paths = self.find_elephant_flow(cur_valve, cd-1, ele_valve, ele_time_to_open-1, cur_flow, time-1, next_unopened)
-                flow += cur_flow
-                if flow > best:
-                    best = flow
-                    path, ele_path = paths
-                    ele_path.extend(self.paths[ele_cur_valve][ele_valve])
-                # unopened.add(ele_valve)
-        if best == 0:
-            best, paths = self.find_elephant_flow(cur_valve, cd-1, ele_cur_valve, ele_cd-1, cur_flow, time-1, unopened)
-            best += cur_flow
-            path, ele_path = paths
+                if ele_time_to_open < time:
+                    flow, paths = self.find_elephant_flow(cur_valve, cd-1, ele_valve, ele_time_to_open-1, cur_flow, time-1, next_unopened)
+                    flow += cur_flow
+                    if flow > best:
+                        best = flow
+                        path, ele_path = paths
+                        ele_path.extend(self.paths[ele_cur_valve][ele_valve])
+            # If the best is still -1, then none of the unopened valves are in range,
+            # so just set the cd to 'infinite'
+            if best == -1:
+                best, (path, ele_path) = self.find_elephant_flow(cur_valve, cd, ele_cur_valve, 999999, cur_flow, time, unopened)
         # print('At time', time, 'best is', best)
         return (best, (path, ele_path))
+        
+    # def find_elephant_flow(self, cur_valve=None, cd=0, ele_cur_valve=None, ele_cd=0, cur_flow=0, time=26, unopened=None):
+    #     if time == 0:
+    #         return (0, ([],[]))
+    #     if cur_valve is None:
+    #         cur_valve = self.start.name
+    #     if ele_cur_valve is None:
+    #         ele_cur_valve = self.start.name
+    #     if unopened is None:
+    #         unopened = [valve for valve in self.valves if self.valves[valve].flow > 0]
+    #     best = 0
+    #     path = []
+    #     ele_path = []
+    #     if cd == 0 and ele_cd == 0 and unopened:
+    #         cur_flow += self.valves[cur_valve].flow + self.valves[ele_cur_valve].flow
+    #         for i, valve in enumerate(unopened):
+    #             #unopened.remove(valve)
+    #             ele_picks = unopened[:i] + unopened[i+1:]
+    #             for j, ele_valve in enumerate(ele_picks):
+    #                 #unopened.remove(ele_valve)
+    #                 next_unopened = ele_picks[:j] + ele_picks[j+1:]
+    #                 # This is one longer than the distance, but we would need to add
+    #                 # one again anyway, to account for the step spent opening the valve
+    #                 time_to_open = len(self.paths[cur_valve][valve])
+    #                 ele_time_to_open = len(self.paths[ele_cur_valve][ele_valve])
+    #                 flow, paths = self.find_elephant_flow(valve, time_to_open-1, ele_valve, ele_time_to_open-1, cur_flow, time-1, next_unopened)
+    #                 flow += cur_flow
+    #                 if flow > best:
+    #                     best = flow
+    #                     path, ele_path = paths
+    #                     path.extend(self.paths[cur_valve][valve])
+    #                     ele_path.extend(self.paths[ele_cur_valve][ele_valve])
+    #                 #unopened.add(ele_valve)
+    #             #unopened.add(valve)
+    #     elif cd == 0 and unopened:
+    #         cur_flow += self.valves[cur_valve].flow
+    #         for i, valve in enumerate(unopened):
+    #             next_unopened = unopened[:i] + unopened[i+1:]
+    #             #unopened.remove(valve)
+    #             time_to_open = len(self.paths[cur_valve][valve])
+    #             flow, paths = self.find_elephant_flow(valve, time_to_open-1, ele_cur_valve, ele_cd-1, cur_flow, time-1, next_unopened)
+    #             flow += cur_flow
+    #             if flow > best:
+    #                 best = flow
+    #                 path, ele_path = paths
+    #                 path.extend(self.paths[cur_valve][valve])
+    #             #unopened.add(valve)
+    #     elif ele_cd == 0 and unopened:
+    #         cur_flow += self.valves[ele_cur_valve].flow
+    #         for i, ele_valve in enumerate(unopened):
+    #             next_unopened = unopened[:i] + unopened[i+1:]
+    #             # unopened.remove(ele_valve)
+    #             ele_time_to_open = len(self.paths[ele_cur_valve][ele_valve])
+    #             flow, paths = self.find_elephant_flow(cur_valve, cd-1, ele_valve, ele_time_to_open-1, cur_flow, time-1, next_unopened)
+    #             flow += cur_flow
+    #             if flow > best:
+    #                 best = flow
+    #                 path, ele_path = paths
+    #                 ele_path.extend(self.paths[ele_cur_valve][ele_valve])
+    #             # unopened.add(ele_valve)
+    #     if best == 0:
+    #         best, paths = self.find_elephant_flow(cur_valve, cd-1, ele_cur_valve, ele_cd-1, cur_flow, time-1, unopened)
+    #         best += cur_flow
+    #         path, ele_path = paths
+    #     # print('At time', time, 'best is', best)
+    #     return (best, (path, ele_path))
     
     # def find_elephant_flow(self, cur_valve=None, cd=0, ele_cur_valve=None, ele_cd=0, cur_flow=0, time=26, unopened=None):
     #     if time == 0:
@@ -280,8 +341,12 @@ class Graph:
 
 test_graph = Graph(test_input)
 print(test_graph.find_highest_flow())
+print(f'Counter = {test_graph.counter}')
 print(test_graph.find_elephant_flow(time=26))
+print(f'Ele_Counter = {test_graph.ele_counter}')
 
 full_graph = Graph(full_input)
 print(full_graph.find_highest_flow())
-#print(full_graph.find_elephant_flow())
+print(f'Counter = {full_graph.counter}')
+print(full_graph.find_elephant_flow())
+print(f'Ele_Counter = {full_graph.ele_counter}')
