@@ -131,7 +131,7 @@ class RobotFactory:
                 
     def seen_state(self, time):
         state = self.get_state()
-        if state in self.prev_states and time >= self.prev_states[state]:
+        if state in self.prev_states and time <= self.prev_states[state]:
             return True
         self.prev_states[state] = time
         return False
@@ -159,8 +159,8 @@ class RobotFactory:
         # the state before or have only seen it with less time available, this check will
         # update the states to include this state with the current time
         # TODO: refactor this so that the adding of the state isn't hidden
-        # if self.seen_state(time):
-        #     return 0, []
+        if self.seen_state(time):
+            return 0, []
         # Before we go down the next step, check if it is theoretically possible
         # to improve from here
         if self.upper_geode_bound(time) <= best_above:
@@ -203,5 +203,5 @@ def part_1(input_str):
 # print(test_factory_2.find_max_geodes())
 # print(test_factory_2.counter)
 
-print(part_1(test_input))
+# print(part_1(test_input))
 print(part_1(full_input))
