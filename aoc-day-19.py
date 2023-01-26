@@ -195,8 +195,22 @@ def part_1(input_str):
         print()
         total += factory.id * geodes
     return total
+
+def part_2(input_str):
+    total = 1
+    for factory_str in input_str.split('\n')[:3]:
+        factory = RobotFactory(factory_str)
+        geodes, history = factory.find_max_geodes(time=32)
+        print(factory)
+        print(geodes, history)
+        print()
+        total *= geodes
+    return total
             
 # test_factory_1 = RobotFactory(test_input.split('\n')[0])
+# for num in range(24,33):
+#     test_factory = RobotFactory(test_input.split('\n')[0])
+#     print(test_factory.find_max_geodes(time=num))
 # print(test_factory_1.find_max_geodes())
 # print(test_factory_1.counter)
 # test_factory_2 = RobotFactory(test_input.split('\n')[1])
@@ -204,4 +218,5 @@ def part_1(input_str):
 # print(test_factory_2.counter)
 
 # print(part_1(test_input))
-print(part_1(full_input))
+# print(part_1(full_input))
+print(part_2(full_input))
