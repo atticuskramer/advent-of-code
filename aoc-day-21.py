@@ -1886,5 +1886,89 @@ def part_1(input_str):
     monkey_dict = get_monkeys_from_str(input_str)
     return monkey_dict['root']()
     
+class Monkey:
+    OPS = {
+        '+' : lambda x,y: x + y,
+        '-' : lambda x,y: x - y,
+        '*' : lambda x,y: x * y,
+        '/' : lambda x,y: x // y
+    }
+    
+    def __init__(self, name, num=None, left=None, right=None, op=None):
+        self.name = name
+        self.num = num
+        self.left = left
+        self.right = right
+        self.op = op
+        
+    def left_contains(self, monkey_name):
+        if self.left is None:
+            return False
+        else:
+            return self.left.contains(monkey_name)
+            
+    def right_contains(self, monkey_name):
+        if self.right is None:
+            return False
+        else:
+            return self.right.contains(monkey_name)
+    
+    def contains(self, monkey_name):
+        return self.name == monkey_name or self.left_contains(monkey_name) or self.right_contains(monkey_name)
+        
+    def get_num(self):
+        if self.num is not None:
+            return self.num
+        else:
+            return self.OPS[self.op](self.left.get_num(), self.right.get_num())
+        
+    def get_humn_num(self, target_num):
+        HUMN = 'humn'
+        if self.name == 'root' and self.left.contains(HUMN):
+            return self.left.get_humn_num(self.right.get_num())
+        elif self.name == 'root' and self.right.contains(HUMN):
+            return self.right.get_humn_num(self.left.get_num())
+            
+        if self.name == HUMN:
+            return target_num
+        elif self.left.contains(HUMN):
+            right_num = self.right.get_num()
+            if self.op == '+':
+                new_target = target_num - right_num
+            elif self.op == '-':
+                new_target = target_num + right_num
+            elif self.op == '*':
+                new_target = target_num // right_num
+            elif self.op == '/':
+                new_target = target_num * right_num
+            return left.get_human_num(new_target)
+        elif self.right.contains(HUMN):
+            left_num = self.left.get_num()
+            if self.op == '+':
+                new_target = target_num - left_num
+            elif self.op == '-':
+                new_target = left_num - target_num
+            elif self.op == '*':
+                new_target = target_num // left_num
+            elif self.op == '/':
+                new_target = left_num // target_num
+            return right.get_human_num(new_target)
+        else:
+            raise Error
+
+# This and the parsing function for part 1 should definitely be abstracted
+# to use the same underlying parsing function.
+def make_monkey_tree(input_str):
+    monkeys = {}
+    monkey_strs = input_str.split('\n')
+    for monkey_str in monkey_strs:
+        name = monkey.split(':')[0]
+        monkeys[name] = Monkey(name)
+    for monkey_str in monkey_strs:
+        name = monkey.split(':')[0]
+        #TODO
+        
+            
+    
 print(part_1(test_input))
 print(part_1(full_input))
