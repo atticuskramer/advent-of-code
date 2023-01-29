@@ -1850,18 +1850,6 @@ lgvd: ljgn * ptdq
 drzm: hmdt - zczc
 hmdt: 32"""
 
-def make_monkey_business(args):
-    if args[0].isnumeric():
-        return lambda: int(args[0])
-    elif arguments[1] == '+':
-        return lambda: monkey_dict[arguments[0]]() + monkey_dict[arguments[2]]()
-    elif arguments[1] == '-':
-        return lambda: monkey_dict[arguments[0]]() - monkey_dict[arguments[2]]()
-    elif arguments[1] == '*':
-        return lambda: monkey_dict[arguments[0]]() * monkey_dict[arguments[2]]()
-    elif arguments[1] == '/':
-        return lambda: monkey_dict[arguments[0]]() / monkey_dict[arguments[2]]()
-
 def get_monkeys_from_str(input_str):
     monkey_dict = {}
     for monkey_str in input_str.split('\n'):
@@ -1941,7 +1929,7 @@ class Monkey:
                 new_target = target_num // right_num
             elif self.op == '/':
                 new_target = target_num * right_num
-            return left.get_human_num(new_target)
+            return self.left.get_humn_num(new_target)
         elif self.right.contains(HUMN):
             left_num = self.left.get_num()
             if self.op == '+':
@@ -1952,9 +1940,9 @@ class Monkey:
                 new_target = target_num // left_num
             elif self.op == '/':
                 new_target = left_num // target_num
-            return right.get_human_num(new_target)
+            return self.right.get_humn_num(new_target)
         else:
-            raise Error
+            raise Exception('Didn\'t find the human in the tree')
 
 # This and the parsing function for part 1 should definitely be abstracted
 # to use the same underlying parsing function.
@@ -1962,13 +1950,31 @@ def make_monkey_tree(input_str):
     monkeys = {}
     monkey_strs = input_str.split('\n')
     for monkey_str in monkey_strs:
-        name = monkey.split(':')[0]
+        name = monkey_str.split(':')[0]
         monkeys[name] = Monkey(name)
     for monkey_str in monkey_strs:
-        name = monkey.split(':')[0]
-        #TODO
+        name = monkey_str.split(':')[0]
+        args = monkey_str.split(': ')[1].split(' ')
+        if args[0].isnumeric():
+            monkeys[name].num = int(args[0])
+        else:
+            monkeys[name].left = monkeys[args[0]]
+            monkeys[name].right = monkeys[args[2]]
+            monkeys[name].op = args[1]
+    return monkeys['root']
+    
+def part_2(input_str):
+    root_monkey = make_monkey_tree(input_str)
+    if root_monkey.left_contains('humn'):
+        target_num = root_monkey.right.get_num()
+    else:
+        target_num = root_monkey.left.get_num()
+    return root_monkey.get_humn_num(target_num)
         
             
     
 print(part_1(test_input))
 print(part_1(full_input))
+print()
+print(part_2(test_input))
+print(part_2(full_input))
