@@ -135,6 +135,12 @@ class Elves:
                 (x-1, y+1) not in self.elves and
                 (x, y+1) not in self.elves and
                 (x+1, y+1) not in self.elves)
+                
+    def any_elves_together(self):
+        for (x, y) in self.elves:
+            if not self.no_elves_around(x,y):
+                return True
+        return False
         
     def can_move_in_dir(self, x, y, direction):
         return ((direction == 'N' 
@@ -199,12 +205,26 @@ def part_1(input_str, num_rounds=10, verbose=False):
         elves.propose_moves()
         elves.move_to_proposed()
         elves.rotate_directions()
-        elves.find_edges()
         if verbose:
+            elves.find_edges()
             print(elves)
+    elves.find_edges()
     grid_size = (elves.right - elves.left + 1) * (elves.bottom - elves.top + 1)
     return grid_size - len(elves.elves)
+    
+def part_2(input_str):
+    elves = Elves(input_str)
+    round = 1
+    while elves.any_elves_together():
+        round += 1
+        elves.propose_moves()
+        elves.move_to_proposed()
+        elves.rotate_directions()
+    return round
                     
         
-print(part_1(test_input, verbose=True))
-print(part_1(full_input, verbose=True))
+print(part_1(test_input))
+print(part_1(full_input, num_rounds=10, verbose=False))
+
+print(part_2(test_input))
+print(part_2(full_input))
