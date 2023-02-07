@@ -69,8 +69,8 @@ class Blizzard:
         new_col = left + (new_col % (right - left - 1))
         if new_row == top:
             new_row = bottom - 1
-        if new_row == left:
-            new_row = right - 1
+        if new_col == left:
+            new_col = right - 1
         return Blizzard(new_row, new_col, self.dir_str, self.drow, self.dcol)
             
 class Valley:
@@ -90,28 +90,10 @@ class Valley:
                     bliz = Blizzard(row, col, char)
                     self.blizzards.append(bliz)
         self.explorer = self.start
-        # This is a janky way to bootstrap this into existence
+        # This is a janky way to bootstrap this
         self.blizzard_positions = []
-        self.blizzard_positions.append(self.blizzards_after(0))
+        self.blizzards_after(0)
         
-    # def __str__(self):
-    #     result_str = ''
-    #     for irow, row in enumerate(self.grid):
-    #         for icol, bliz_list in enumerate(row):
-    #             if irow == self.explorer[0] and icol == self.explorer[1]:
-    #                 result_str += 'E'
-    #             elif (irow == self.top and icol == self.left + 1) or (irow == self.bottom and icol == self.right - 1):
-    #                 result_str += '.'
-    #             elif irow == self.top or irow == self.bottom or icol == self.left or icol == self.right:
-    #                 result_str += '#'
-    #             elif len(bliz_list) > 1:
-    #                 result_str += str(len(bliz_list))
-    #             elif len(bliz_list) == 1:
-    #                 result_str += str(bliz_list[0])
-    #             else:
-    #                 result_str += '.'
-    #         result_str += '\n'
-    #     return result_str
     
     def print_state(self, state):
         new_blizzards = self.blizzards_after(state[0])
@@ -182,7 +164,7 @@ def a_star_explore(valley):
     while(queue):
         # 1. Pop the first item in the queue and set that to be our current state
         cur_state = queue.popleft()
-        valley.print_state(cur_state)
+        # valley.print_state(cur_state)
         # 2. Check if the current state is the goal state, if it is, return the path(_length)
         #    from the start state to the goal
         if valley.is_goal(cur_state):
@@ -207,10 +189,7 @@ def a_star_explore(valley):
         
 def part_1(input_str, verbose=False):
     valley = Valley(input_str)
-    # for i in range(10):
-    #     print(valley.blizzards_after(i))
     return a_star_explore(valley)
         
 print(part_1(test_input))
-
-# print(part_1(full_input))
+print(part_1(full_input))
