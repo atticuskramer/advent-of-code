@@ -170,6 +170,47 @@ class Valley:
         self.explorer = cur_explorer
         return best
         
+    # Stubs for A_star use conversion
+    def is_goal(self):
+        pass
+    
+    def get_next_states(self):
+        pass
+    
+    def get_f_score(self):
+        pass
+        
+def a_star_explore(valley, is_goal_func):
+    # 0. Keep track of a set of explored states, and a queue of next states, both starting
+    #    with just the initial state.
+    queue = [valley]
+    explored = set(queue)
+    # While there are states to check left in the queue...
+    while(queue):
+        # 1. Pop the first item in the queue and set that to be our current state
+        cur_state = queue.pop(0)
+        # 2. Check if the current state is the goal state, if it is, return the path(_length)
+        #    from the start state to the goal
+        if cur_state.is_goal():
+            return cur_state.path_length
+        # 3. Get all of the next possible states from the current state that are not already
+        #    in our set of explored states
+        next_states = [state for state in cur_state.get_next_states() if state not in explored]
+        # 4. Insert those states into the queue, keeping the queue sorted based on increasing
+        #    f score, where f(state) = length from start to state + manhattan distance to goal state
+        for state in next_states:
+            inserted = False
+            for i, q_state in enumerate(queue):
+                if state.get_f_score() < q_state.get_f_score():
+                    queue.insert(i, state)
+                    inserted = True
+                    break
+            if not inserted:
+                queue.append(state)
+            explored.add(state)
+    # 5. If we break out of the loop, then there is no path from the start to the goal
+    return -1
+        
 def part_1(input_str, verbose=False):
     valley = Valley(input_str)
     return valley.explore(verbose=verbose)
