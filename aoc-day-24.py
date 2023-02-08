@@ -132,8 +132,10 @@ class Valley:
         self.blizzard_positions.append(bliz_dict)
         return bliz_dict
         
-    def is_goal(self, state):
-        return state[1:] == self.goal
+    def is_goal(self, state, goal=None):
+        if goal is None:
+            goal = self.goal
+        return state[1:] == goal
     
     def get_next_states(self, state):
         next_path_length = state[0] + 1
@@ -150,14 +152,20 @@ class Valley:
                 next_states.append((next_path_length, new_row, new_col))
         return next_states
     
-    def get_f_score(self, state):
-        return state[0] + abs(state[1] - self.goal[0]) + abs(state[2] - self.goal[1])
+    def get_f_score(self, state, goal=None):
+        if goal is None:
+            goal = self.goal
+        return state[0] + abs(state[1] - goal[0]) + abs(state[2] - goal[1])
         
-def a_star_explore(valley):
+def a_star_explore(valley, start_time=0, start=None, goal=None):
+    if start is None:
+        start = valley.start
+    if goal is None:
+        goal = valley.goal
     # 0. Keep track of a set of explored states, and a queue of next states, both starting
     #    with just the initial state.
     # Our state will just be a triple of (path_length, explorer_row, explorer_col)
-    start_state = (0, valley.start[0], valley.start[1])
+    start_state = (start_time, start[0], start[1])
     queue = deque([start_state])
     explored = set(queue)
     # While there are states to check left in the queue...
@@ -167,7 +175,7 @@ def a_star_explore(valley):
         # valley.print_state(cur_state)
         # 2. Check if the current state is the goal state, if it is, return the path(_length)
         #    from the start state to the goal
-        if valley.is_goal(cur_state):
+        if valley.is_goal(cur_state, goal=goal):
             return cur_state[0]
         # 3. Get all of the next possible states from the current state that are not already
         #    in our set of explored states
@@ -177,7 +185,7 @@ def a_star_explore(valley):
         for state in next_states:
             inserted = False
             for i, q_state in enumerate(queue):
-                if valley.get_f_score(state) < valley.get_f_score(q_state):
+                if valley.get_f_score(state, goal=goal) < valley.get_f_score(q_state, goal=goal):
                     queue.insert(i, state)
                     inserted = True
                     break
@@ -187,9 +195,20 @@ def a_star_explore(valley):
     # 5. If we break out of the loop, then there is no path from the start to the goal
     return -1
         
-def part_1(input_str, verbose=False):
+def part_1(input_str):
     valley = Valley(input_str)
     return a_star_explore(valley)
+    
+def part_2(input_str):
+    valley = Valley(input_str)
+    first_trip_length = a_star_explore(valley)
+    second_trip_length = a_star_explore(valley, first_trip_length, start=valley.goal, goal = valley.start)
+    third_trip_length = a_star_explore(valley, second_trip_length)
+    print(f'->: {first_trip_length}, <-: {second_trip_length}, ->: {third_trip_length}')
+    return third_trip_length
         
 print(part_1(test_input))
 print(part_1(full_input))
+
+print(part_2(test_input))
+print(part_2(full_input))
