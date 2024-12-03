@@ -32,7 +32,6 @@ def part_1(input_str):
     for line in input_str.split('\n'):
         levels = [int(digit) for digit in line.split()]
         if is_gradual(levels):
-            print('safe levels found', levels)
             safe_reports += 1
     return safe_reports
             
