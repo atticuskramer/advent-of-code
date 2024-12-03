@@ -1,4 +1,4 @@
-"""Advent of Code 2024: Day 1"""
+"""Advent of Code 2024: Day 2"""
 
 test_input = """7 6 4 2 1
 1 2 7 8 9
