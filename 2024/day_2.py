@@ -37,10 +37,17 @@ def part_1(input_str):
             
 
 def part_2(input_str):
-    pass
+    safe_reports = 0
+    for line in input_str.split('\n'):
+        levels = [int(digit) for digit in line.split()]
+        for i, num in enumerate(levels):
+            if is_gradual(levels[:i] + levels[i+1:]):
+                safe_reports += 1
+                break
+    return safe_reports
 
 def main():
-    with open('aoc_day_1_input.txt') as input_file:
+    with open('aoc_day_2_input.txt') as input_file:
         full_input = input_file.read()
     print(part_1(test_input))
     print(part_1(full_input))
