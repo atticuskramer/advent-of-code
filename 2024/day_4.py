@@ -43,6 +43,12 @@ def is_xmas(lines, row, col, drow, dcol):
             lines[row+2*drow][col+2*dcol] == 'A' and
             lines[row+3*drow][col+3*dcol] == 'S')
 
+def is_x_mas(lines, row, col):
+    ms_set = set(['M','S'])
+    left = set([lines[row-1][col-1], lines[row+1][col+1]])
+    right = set([lines[row-1][col+1], lines[row+1][col-1]])
+    return left == ms_set and right == ms_set
+
 def part_1(input_str):
     """Count the number of times XMAS is found in the input_str
     
@@ -63,7 +69,24 @@ def part_1(input_str):
     return xmases
             
 def part_2(input_str):
-    pass
+    """Count the number of times an X of MAS is found in the input_str
+    
+    We are looking for anything of the form:
+        M.M
+        .A.
+        S.S
+    Where MAS can be forward or backward and up or down"""
+    padded = pad_string_block(input_str, 1, pad_char='.')
+    lines = padded.split()
+    x_mases = 0
+    # These loops are currently checking more than necessary since they look
+    # at the padding as well, but it's ultimately a pretty minor inefficiency
+    for row, line in enumerate(lines):
+        for col, char in enumerate(line):
+            # If we see an A, check around it for the diagonal MS's 
+            if char == 'A':
+                x_mases += is_x_mas(lines, row, col)
+    return x_mases
 
 def main():
     with open('aoc_day_4_input.txt') as input_file:
