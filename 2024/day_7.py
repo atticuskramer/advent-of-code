@@ -28,6 +28,28 @@ def can_make_add_mult(goal, parts):
     # Otherwise, do our operations and check the new lists
     return (can_make_add_mult(goal, [parts[0] * parts[1]] + parts[2:]) 
             or can_make_add_mult(goal, [parts[0] + parts[1]] + parts[2:]))
+
+def concat(num1, num2):
+    return int(str(num1) + str(num2))
+
+def can_make_add_mult_concat(goal, parts):
+    """Determine if goal can be made with the numbers in parts using +/*/||"""
+
+    # We will do this recursively, combining the first two members of parts
+    # with both addition and multiplication and then checking if we can make
+    # goal using the new parts lists
+
+    # If we are down to just one number in the list, it must be goal to be true
+    if len(parts) == 1:
+        return goal == parts[0]
+    # If the first number in parts is larger than the goal, there is definitely
+    # no way to get back down to goal
+    if parts[0] > goal:
+        return False
+    # Otherwise, do our operations and check the new lists
+    return (can_make_add_mult_concat(goal, [parts[0] * parts[1]] + parts[2:]) 
+            or can_make_add_mult_concat(goal, [parts[0] + parts[1]] + parts[2:])
+            or can_make_add_mult_concat(goal, [concat(parts[0], parts[1])] + parts[2:]))
     
 
 def part_1(input_str):
@@ -48,7 +70,20 @@ def part_1(input_str):
 
             
 def part_2(input_str):
-    pass
+    """Return sum of numbers that can be created using +, *, and concatenation
+    
+    This is a lot more resource intensive than part 1, since each line now
+    requires a max of 3^10 = 59,049 checks, but I think that should still
+    be small enough to brute force"""
+    lines = input_str.split('\n')
+    total = 0
+    for line in lines:
+        goal_str, nums_str = line.split(':')
+        goal = int(goal_str)
+        nums = [int(num_str) for num_str in re.findall(r'[0-9]+', nums_str)]
+        if can_make_add_mult_concat(goal, nums):
+            total += goal
+    return total
             
 def main():
     with open('aoc_day_7_input.txt') as input_file:
