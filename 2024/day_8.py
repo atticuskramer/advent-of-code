@@ -34,7 +34,7 @@ class Antenna_Grid():
         row,col = point
         return 0 <= row < self.width and 0 <= col < self.height
 
-    def add_antinodes(self):
+    def add_antinodes(self, harmonic=False):
         for antenna_type, locations in self.antennae.items():
             # This structure is going to do double work (checking each pair of
             # Antennas A,B and B,A), but this should not change end result or
@@ -43,16 +43,24 @@ class Antenna_Grid():
                 for (row2, col2) in locations:
                     # Same antenna, no antinode
                     if (row1,col1) == (row2, col2):
+                        if harmonic:
+                            self.antinodes.add((row1, col1))
                         continue
                     # Otherwise, find the antinodes and add them if in bounds
                     drow = row1 - row2
                     dcol = col1 - col2
-                    antinode1 = (row1+drow, col1+dcol)
-                    antinode2 = (row2-drow, col2-dcol)
-                    if self.in_bounds(antinode1): 
+                    mul = 1
+                    antinode1 = (row1+(mul*drow), col1+(mul*dcol))
+                    while (harmonic or mul==1) and self.in_bounds(antinode1):
                         self.antinodes.add(antinode1)
-                    if self.in_bounds(antinode2):
+                        mul += 1
+                        antinode1 = (row1+(mul*drow), col1+(mul*dcol))
+                    mul = 1
+                    antinode2 = (row2-(mul*drow), col2-(mul*dcol))
+                    while (harmonic or mul==1) and self.in_bounds(antinode2):
                         self.antinodes.add(antinode2)
+                        mul += 1
+                        antinode2 = (row2-(mul*drow), col2-(mul*dcol))
                     
 
 
@@ -62,7 +70,9 @@ def part_1(input_str):
     return len(ag.antinodes)
             
 def part_2(input_str):
-    pass
+    ag = Antenna_Grid(input_str)
+    ag.add_antinodes(harmonic=True)
+    return len(ag.antinodes)
             
 def main():
     with open('aoc_day_8_input.txt') as input_file:
