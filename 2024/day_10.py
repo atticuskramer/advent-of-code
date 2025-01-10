@@ -37,6 +37,21 @@ def find_nines(grid, row, col):
                     next.append(neighbor)
     return nines
 
+def find_paths(grid, row, col):
+    # This is the same as find_nines, but just without any visited set
+    # so that we find all paths instead of just the endpoints, and with
+    # a list of nines instead of a set
+    next = [(row,col)]
+    nines = []
+    while next:
+        # We are going to search depth first, popping the end of the list
+        row, col = next.pop()
+        if grid[row][col] == 9:
+            nines.append((row,col))
+        else:
+            next.extend(get_increasing_neighbors(grid, row, col))
+    return nines
+
 def part_1(input_str):
     """Find the number of endpoints reachable from all trailheads
     
@@ -56,7 +71,20 @@ def part_1(input_str):
 
             
 def part_2(input_str):
-    pass
+    """Find the number of hiking paths from all trailheads
+    
+    A trailhead is the point a hiking trail starts at, in this case,
+    it must be 0. A hiking trail is any path from that trailhead to a 9"""
+    grid = [[int(num) for num in line] for line in input_str.split('\n')]
+    total = 0
+    for row, line in enumerate(grid):
+        for col, num in enumerate(line):
+            # We only want to start searching on 0's
+            if num != 0:
+                continue
+            paths = find_paths(grid, row, col)
+            total += len(paths)
+    return total
             
 def main():
     with open('aoc_day_10_input.txt') as input_file:
